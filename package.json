@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode-egm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Unofficial OpenCode V2 adapter for Google's Elephant-Goldfish Model (EGM) skills and reviewer personas.",
   "type": "module",
   "license": "Apache-2.0",

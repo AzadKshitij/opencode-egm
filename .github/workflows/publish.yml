@@ -10,12 +10,15 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    env:
+      # Accept the common secret names so an existing setup keeps working.
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_AUTH_TOKEN || secrets.NODE_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
+          node-version: 24
+          cache: npm
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
@@ -28,6 +31,23 @@ jobs:
             echo "Tag v$tag does not match package version $version"
             exit 1
           }
-      - run: npm publish --provenance
+      - name: Check npm auth mode
+        shell: bash
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "Using an npm token from repository secrets."
+          else
+            echo "No npm token found; using OIDC trusted publishing."
+          fi
+      - name: Publish with npm token
+        if: env.NPM_TOKEN != ''
+        shell: bash
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
+          npm publish --provenance
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_AUTH_TOKEN || secrets.NODE_AUTH_TOKEN }}
+      - name: Publish with OIDC trusted publishing
+        if: env.NPM_TOKEN == ''
+        shell: bash
+        run: npm publish --provenance
