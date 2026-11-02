@@ -1,0 +1,20 @@
+opencode-egm
+
+Copyright 2026 Azadk and contributors.
+
+This product is an unofficial OpenCode V2 adapter for Google's
+Elephant-Goldfish Model (EGM) skill pack. It is not an officially
+supported Google product.
+
+Vendored EGM content (skills, personas, document standards, and
+documentation) is Copyright 2026 Google LLC and is distributed under the
+Apache License, Version 2.0. See assets/egm/LICENSE and the NOTICE below.
+
+Attribution:
+  Elephant-Goldfish Model (EGM)
+  Copyright 2026 Google LLC
+  https://github.com/google/elephant-goldfish-model
+  Licensed under the Apache License, Version 2.0.
+
+The adapter code itself is also licensed under the Apache License, Version 2.0.
+See LICENSE.

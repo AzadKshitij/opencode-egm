@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "opencode-egm",
+  "version": "0.1.0",
+  "description": "Unofficial OpenCode V2 adapter for Google's Elephant-Goldfish Model (EGM) skills and reviewer personas.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "assets",
+    "README.md",
+    "NOTICE",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "egm",
+    "elephant-goldfish-model",
+    "design-review",
+    "code-review",
+    "specification"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azadk/opencode-egm.git"
+  },
+  "homepage": "https://github.com/azadk/opencode-egm#readme",
+  "bugs": {
+    "url": "https://github.com/azadk/opencode-egm/issues"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx tests/smoke.ts",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.2.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
