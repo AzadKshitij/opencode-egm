@@ -1,20 +1,24 @@
-name: Publish
+name: Release
 
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    env:
-      # Accept the common secret names so an existing setup keeps working.
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_AUTH_TOKEN || secrets.NODE_AUTH_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -22,32 +26,10 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - name: Verify tag matches package version
-        shell: bash
+      - name: Configure git author
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          version="$(node -p "require('./package.json').version")"
-          test "$tag" = "$version" || {
-            echo "Tag v$tag does not match package version $version"
-            exit 1
-          }
-      - name: Check npm auth mode
-        shell: bash
-        run: |
-          if [ -n "$NPM_TOKEN" ]; then
-            echo "Using an npm token from repository secrets."
-          else
-            echo "No npm token found; using OIDC trusted publishing."
-          fi
-      - name: Publish with npm token
-        if: env.NPM_TOKEN != ''
-        shell: bash
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > "$HOME/.npmrc"
-          npm publish --provenance
+          git config user.name "AzadKshitij"
+          git config user.email "azadkshitij08@gmail.com"
+      - run: npx semantic-release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || secrets.NPM_AUTH_TOKEN || secrets.NODE_AUTH_TOKEN }}
-      - name: Publish with OIDC trusted publishing
-        if: env.NPM_TOKEN == ''
-        shell: bash
-        run: npm publish --provenance
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
