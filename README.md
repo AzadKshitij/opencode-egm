@@ -75,7 +75,8 @@ already wrote.
 - `/egm-resolve` works best in the session that produced the draft.
 - `/egm-bootstrap` writes documentation only. Pass `target_filename=EGM.md` to
   leave existing READMEs untouched.
-- Gates ask one question per turn. Answer in the UI or in plain text.
+- Gates use OpenCode's `question` tool. The agent waits for your answer and
+  continues in the same turn; pick an option or type your own answer.
 
 ### Artifacts
 

@@ -32,7 +32,28 @@ for (const skill of skills) {
   assert.ok(!skill.content.includes("${CLAUDE_PLUGIN_ROOT}"), `${skill.id} still has plugin root variable`)
   assert.ok(!skill.content.includes("harness's subagent tool"), `${skill.id} still has harness wording`)
   assert.ok(!skill.content.includes("egm-egm-"), `${skill.id} has a doubled egm prefix`)
+  assert.ok(
+    skill.content.includes("use the `question` tool for every gate"),
+    `${skill.id} missing question-tool gate instruction`,
+  )
+  assert.ok(!skill.content.includes("or plain chat"), `${skill.id} still offers a plain-chat fallback`)
+  assert.ok(!skill.content.includes("and end your turn"), `${skill.id} still ends the turn at a gate`)
 }
+
+const brainstormSkill = skills.find((skill) => skill.id === "egm-brainstorm")
+assert.ok(brainstormSkill)
+assert.ok(
+  brainstormSkill.content.includes("Use the `question` tool for each open-ended question"),
+  "brainstorm does not route open-ended questions through the question tool",
+)
+assert.ok(!brainstormSkill.content.includes("directly in chat"), "brainstorm still asks in chat")
+
+const reviewSkill = skills.find((skill) => skill.id === "egm-review")
+assert.ok(reviewSkill)
+assert.ok(
+  reviewSkill.content.includes("Ask for the path with the `question` tool"),
+  "review does not route the path prompt through the question tool",
+)
 
 const agents: Agent.Info[] = []
 const agentEditor = {
@@ -98,5 +119,6 @@ assert.equal(prompts.length, 1)
 assert.equal(prompts[0]?.sessionID, "ses_test")
 assert.deepEqual(prompts[0]?.skills, [{ id: "egm-brainstorm" }])
 assert.ok(String(prompts[0]?.text).includes("offline-first sync"))
+assert.ok(String(prompts[0]?.text).includes("Use the `question` tool for every gate"))
 
 console.log(`opencode-egm smoke test passed: ${skills.length} skills, ${agents.length} agents, ${commands.length} commands.`)

@@ -73,8 +73,9 @@ export function registerCommands(editor: CommandEditor, ctx: { session: PromptSe
           `Follow it exactly. If the attachment did not load, read \`${skillPath}\` and`,
           "follow that file.",
           "",
-          "Keep the EGM gates: one question at a time, artifact-first delivery, and",
-          "fresh-context reviewers dispatched through the `task` tool.",
+          "Use the `question` tool for every gate, including open-ended input; do",
+          "not ask gates in plain chat and stop. Keep artifact-first delivery and",
+          "dispatch fresh-context reviewers through the `task` tool.",
         ].join("\n")
 
         await ctx.session.prompt({

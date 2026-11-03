@@ -98,8 +98,11 @@ Use the `question` tool. Send exactly one question per turn:
 - The `question` call must be the only tool call in that turn.
 
 Translate EGM's `is_multi_select` to `multiple` and turn each string option into
-`{ "label": "..." }`. For open-ended input (paths, constraints), ask one
-plain-text question in chat and stop.
+`{ "label": "..." }`. Use the same tool for open-ended input: provide at least
+one plausible option and let the user type a path or constraint in the
+free-form answer field. The tool blocks until the user answers; continue the
+workflow in the same turn after it returns. Do not ask gates in plain chat and
+stop.
 
 ## Artifacts
 

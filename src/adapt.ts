@@ -34,13 +34,16 @@ function skillPreamble(root: string, skillDirectory: string): string {
     ">   The synthesizer can spawn reviewers itself (it has `subagent` permission)",
     ">   and compile their reports, or you can spawn reviewers first and pass their",
     ">   reports in its prompt. Either way, it writes the consolidated artifact.",
-    "> - **Question gates:** use the `question` tool. Send exactly one question",
-    ">   (`questions` has one entry), set `multiple: false`, and use action-oriented",
-    ">   option labels. The `question` call must be the only tool call in that turn. The",
-    ">   JSON blocks below describe the intended interaction; translate",
+    "> - **Question gates:** use the `question` tool for every gate, including",
+    ">   open-ended input. The tool blocks until the user answers and returns the",
+    ">   answer, so continue the workflow in the same turn after it returns. Never",
+    ">   ask a gate in plain chat and stop, and never end the turn to wait for a",
+    ">   reply. Send exactly one question (`questions` has one entry), set",
+    ">   `multiple: false`, and use action-oriented option labels. Always provide",
+    ">   at least one option; the UI adds a free-form answer field for paths and",
+    ">   constraints. The `question` call must be the only tool call in that turn.",
+    ">   The JSON blocks below describe the intended interaction; translate",
     '>   `is_multi_select` to `multiple` and turn each string option into `{ "label": "..." }`.',
-    ">   For open-ended input (a path, a free-form constraint), ask one plain-text",
-    ">   question in chat and stop instead.",
     "> - **Artifacts:** write briefs, drafts, and reports to the user's working directory.",
     ">   If the user's prompt or `AGENTS.md` contains `EGM artifact directory: <path>`,",
     ">   write there instead and create the directory. Do not dump large artifacts into chat.",
@@ -146,6 +149,92 @@ function insertAfterTitle(markdown: string, block: string): string {
   return lines.join("\n")
 }
 
+function adaptQuestionGates(text: string): string {
+  let result = text
+
+  // Intake blocks that explicitly send the model to plain chat and end the turn.
+  result = result.replace(
+    /\*   Prompt the user in chat for the path via a regular text message \(do NOT\s+use structured question tools such as `question`, as providing an\s+arbitrary file path is an open-ended text input, not a choice between\s+fixed options\) and end your turn\./,
+    "*   Ask for the path with the `question` tool. Offer the most likely file as\n" +
+      "        an option; the user can type any path in the free-form answer field.\n" +
+      "        After the tool returns, continue with the workflow.",
+  )
+
+  result = result.replace(
+    /\*   Prompt the user in chat via regular text if they wish to provide\s+additional context files\. Do NOT use structured question tools for\s+open-ended file paths\./,
+    "*   Ask whether to add context files with the `question` tool. Offer\n" +
+      '        "No additional context" and "Use files referenced in the document"\n' +
+      "        as options; the user can type paths in the free-form answer field.",
+  )
+
+  // Brainstorm's open-ended clarification loop.
+  result = result.replace(
+    /through open-ended plain-text questions across\s+multiple chat turns until/,
+    "through open-ended questions using the `question` tool, one question per\n" +
+      "    turn, until",
+  )
+
+  result = result.replace(
+    /open-ended clarifying questions across multiple chat turns/g,
+    "open-ended questions using the `question` tool, one per turn",
+  )
+
+  result = result.replace(
+    /You are\s+\*\*STRICTLY FORBIDDEN\*\* from using structured question tools \(`question`\)\s+or supplying pre-canned multiple-choice candidate answers during open-ended\s+questioning\./,
+    "Use the `question` tool for each open-ended question. Provide one\n" +
+      "    plausible option and let the user type their own answer in the\n" +
+      "    free-form field; do not end the turn to wait for a chat reply.",
+  )
+
+  result = result.replace(
+    /Do NOT use structured question tools \(`question`\) and do NOT\s+provide candidate multiple-choice options during problem exploration\. Ask\s+open-ended questions directly in chat:/,
+    "Use the `question` tool for each open-ended question. Provide one\n" +
+      "    plausible option and let the user type their own answer in the\n" +
+      "    free-form field; do not end the turn to wait for a chat reply. Ask:",
+  )
+
+  // Normalize the remaining "structured question tool ... or plain chat" variants.
+  result = result.replace(
+    /using a structured question tool such as\s+`question`\s+with([\s\S]*?)if your harness has\s+one, or plain chat\)/g,
+    "using the `question` tool with$1)",
+  )
+  result = result.replace(
+    /using a structured question tool such\s+as `question`\s+with([\s\S]*?), or plain chat\)/g,
+    "using the `question` tool with$1)",
+  )
+  result = result.replace(
+    /using a structured question tool such as\s+`question` if your harness has one, or plain chat/g,
+    "using the `question` tool",
+  )
+  result = result.replace(
+    /using a structured question tool, if your harness has one, or plain chat/g,
+    "using the `question` tool",
+  )
+  result = result.replace(
+    /\(structured question tools\s+such as `question`, if your harness has one, or plain chat\)/g,
+    "(the `question` tool)",
+  )
+  result = result.replace(/, or\s+plain chat\)/g, ")")
+  result = result.replace(
+    /using a structured\s+question tool such as\s+`question`\s+with/g,
+    "using the `question` tool with",
+  )
+  result = result.replace(
+    /using a structured\s+question tool such as\s+`question`/g,
+    "using the `question` tool",
+  )
+  result = result.replace(/or plain\s+chat/g, "or the `question` tool")
+  result = result.replace(/plain\s+chat/g, "the `question` tool")
+  result = result.replace(/and end your turn\./g, "using the `question` tool.")
+  result = result.replace(
+    /using the `question` tool if your harness has one, or the `question` tool/g,
+    "using the `question` tool",
+  )
+  result = result.replace(/`is_multi_select: false`\s+\)/g, "`is_multi_select: false`)")
+
+  return result
+}
+
 export function adaptSkillContent(skillId: string, raw: string, root: string): string {
   const { body } = parseFrontmatter(raw)
   const skillDirectory = bundlePath(root, "skills", skillId)
@@ -163,6 +252,7 @@ export function adaptSkillContent(skillId: string, raw: string, root: string): s
   )
 
   text = text.replaceAll("ask_question", "question")
+  text = adaptQuestionGates(text)
   text = text.replaceAll("your harness's subagent tool", "OpenCode's `task` tool")
   text = text.replaceAll(
     "harness's artifact directory, if it has one",
